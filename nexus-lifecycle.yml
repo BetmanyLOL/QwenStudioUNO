@@ -1,0 +1,40 @@
+name: Nexus lifecycle
+
+on:
+  push:
+    paths:
+      - 'nexos/**'
+      - 'manifest.json'
+  schedule:
+    - cron: '0 */6 * * *'   # revisión cada 6 horas
+  workflow_dispatch: {}      # permite correrlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run lifecycle script
+        run: python scripts/lifecycle.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "nexus-lifecycle-bot"
+          git config user.email "actions@github.com"
+          git add manifest.json nexos/
+          if git diff --cached --quiet; then
+            echo "Sin cambios que commitear."
+          else
+            git commit -m "chore(nexus): lifecycle run $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            git push
+          fi
