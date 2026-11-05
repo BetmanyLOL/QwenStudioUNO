@@ -1,0 +1,42 @@
+{
+  "limit": 8000,
+  "warning_threshold": 7800,
+  "nexos": [
+    {
+      "id": "a1b2c3",
+      "pseudonym": "@PixelWizard042",
+      "avatar": "🦊",
+      "title": "Dashboard de ventas interactivo",
+      "category": "presentacion",
+      "created_at": "2026-10-20T14:22:00Z",
+      "size_bytes": 184320,
+      "status": "active",
+      "warned_at": null,
+      "claim_key": "9f8e7d6c5b4a"
+    },
+    {
+      "id": "d4e5f6",
+      "pseudonym": "@RainySponge4312",
+      "avatar": "🐙",
+      "title": "Snake en HTML/JS puro",
+      "category": "codigo",
+      "created_at": "2026-10-15T09:10:00Z",
+      "size_bytes": 42012,
+      "status": "active",
+      "warned_at": null,
+      "claim_key": "2b3c4d5e6f7a"
+    },
+    {
+      "id": "g7h8i9",
+      "pseudonym": "@SilentRaptor9865",
+      "avatar": "🦜",
+      "title": "Infografía: historia del café",
+      "category": "presentacion",
+      "created_at": "2026-09-02T18:40:00Z",
+      "size_bytes": 95210,
+      "status": "at_risk",
+      "warned_at": "2026-11-03T06:00:00Z",
+      "claim_key": "1a2b3c4d5e6f"
+    }
+  ]
+}
