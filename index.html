@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qwen Studio — Portfolio</title>
+<link rel="icon" href="App.ico" type="image/x-icon">
+<style>
+/* ===== Fuentes (placeholders: reemplazar src por los .otf reales del proyecto) ===== */
+@font-face{
+  font-family:"AnthropicSans Display";
+  src:local("AnthropicSans Display Light"), local("AnthropicSans-Display-Light-Static");
+  font-weight:300; font-display:swap;
+}
+:root{
+  --bg:#141312; --panel:#1a1918; --panel-alt:#211f1d; --border:#2e2c29;
+  --accent:#d97757; --accent-soft:#c35f3d;
+  --text:#faf9f5; --text-ai:#eeece6; --text-dim:#a8a69e;
+  --success:#7ec699; --error:#f87171; --code-bg:#0f0e0d;
+  --serif:"AnthropicSans Display","Tiempos Text",Georgia,"Times New Roman",serif;
+  --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Cascadia Code","Consolas",monospace;
+  color-scheme: dark;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth; scroll-padding-top:70px;}
+body{
+  background:var(--bg); color:var(--text-ai); font-family:var(--sans);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  overflow-x:hidden;
+}
+
+a{color:inherit; text-decoration:none;}
+img,svg{max-width:100%; display:block;}
+::selection{background:var(--accent); color:#1a1a18;}
+
+/* ===== Ambient side glows (follow the cursor, like the Python app's halo) ===== */
+.ambient-glow{
+  position:fixed; top:50%; width:560px; height:860px; max-height:85vh; border-radius:50%;
+  background:radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  filter:blur(110px); opacity:.28; z-index:0; pointer-events:none;
+  transition:transform .6s cubic-bezier(.22,1,.36,1), opacity .6s ease;
+}
+.glow-left{left:-260px; transform:translate(0,-50%);}
+.glow-right{right:-260px; transform:translate(0,-50%);}
+.page{position:relative; z-index:1;}
+@media (max-width:760px){ .ambient-glow{opacity:.16; width:360px; height:360px;} }
+
+/* ===== Barra superior (misma jerarquía que la UI nativa) ===== */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30;}
+.topbar{
+  position:fixed; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:20;
+  display:flex; align-items:center; justify-content:space-between;
+  height:58px; padding:0 18px; background:var(--bg); border-bottom:1px solid var(--border);
+}
+.tb-left{display:flex; align-items:center; gap:12px; min-width:0;}
+.tb-brand{display:flex; align-items:center; gap:8px; min-width:0;}
+.tb-logo-slot{position:relative; width:22px; height:22px; flex:none;}
+.tb-logo{position:absolute; inset:0; width:22px; height:22px; object-fit:contain; opacity:0; transition:opacity .25s;}
+.tb-logo.show{opacity:1;}
+.tb-logo-glow{
+  position:absolute; inset:-7px; border-radius:50%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, transparent) 0%, transparent 70%);
+  opacity:.85; animation:tbLogoPulse 1.6s ease-in-out infinite;
+  transition:opacity .35s ease;
+  pointer-events:none;
+}
+.tb-logo-glow.hide{opacity:0 !important; animation:none;}
+@keyframes tbLogoPulse{
+  0%,100%{transform:scale(.85); opacity:.55;}
+  50%{transform:scale(1.15); opacity:1;}
+}
+.tb-word{font-family:var(--serif); font-weight:300; font-size:19px; color:var(--text); white-space:nowrap;}
+.tb-crumb{
+  display:flex; align-items:center; gap:6px; color:var(--text-dim); font-size:13px;
+  padding-left:12px; border-left:1px solid var(--border); margin-left:4px; white-space:nowrap;
+}
+.tb-nav{
+  display:flex; gap:22px; font-size:13.5px; color:var(--text-dim);
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+}
+.tb-nav a{transition:color .15s;}
+.tb-nav a:hover, .tb-nav a.active{color:var(--text);}
+.tb-nav .soon{opacity:.55;}
+@media (max-width:760px){ .tb-nav{display:none;} }
+
+/* ===== Logo (QwenIconload.png, se coloca junto a este index.html) ===== */
+.tb-logo{object-fit:contain;}
+
+/* ===== Hero con animación de scroll (rota → se achica → ancla al nav) ===== */
+.hero{position:relative; height:230vh;}
+.hero-sticky{
+  position:sticky; top:0; height:100vh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:0 24px;
+  overflow:hidden;
+}
+.hero-logo-slot{width:132px; height:132px; margin-bottom:28px;}
+#heroLogo{width:132px; height:132px; object-fit:contain; transform-origin:50% 50%; will-change:transform;}
+.hero-title{
+  font-family:var(--serif); font-weight:300; font-size:clamp(40px,7vw,78px);
+  color:var(--text); letter-spacing:.2px; transition:opacity .1s linear, transform .1s linear;
+}
+.hero-sub{
+  margin-top:16px; max-width:560px; font-size:16.5px; line-height:1.6; color:var(--text-dim);
+  transition:opacity .1s linear, transform .1s linear;
+}
+.hero-cta{margin-top:34px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center; transition:opacity .1s linear;}
+.btn{
+  padding:11px 22px; border-radius:10px; font-size:14px; cursor:pointer; border:1px solid transparent;
+}
+.btn-accent{background:var(--accent); color:#1a1a18; font-weight:600;}
+.btn-accent:hover{background:var(--accent-soft);}
+.btn-ghost{background:var(--panel); color:var(--text-dim); border-color:var(--border);}
+.btn-ghost:hover{color:var(--text); border-color:var(--accent);}
+.scroll-hint{
+  position:absolute; bottom:38px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  opacity:.75; transition:opacity .3s ease;
+}
+.scroll-hint:hover{opacity:1;}
+.scroll-hint .scroll-label{
+  font-size:10.5px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--text-dim);
+}
+.scroll-hint .scroll-chevrons{
+  display:flex; flex-direction:column; align-items:center; gap:3px; height:16px;
+}
+.scroll-hint .scroll-chevrons svg{width:11px; height:7px; display:block;}
+.scroll-hint .scroll-chevrons svg path{
+  stroke:var(--text-dim); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round;
+}
+.scroll-hint .scroll-chevrons svg:nth-child(1){animation:chevFade 1.8s ease-in-out infinite;}
+.scroll-hint .scroll-chevrons svg:nth-child(2){animation:chevFade 1.8s ease-in-out .3s infinite;}
+@keyframes chevFade{
+  0%{opacity:.15; transform:translateY(-2px);}
+  40%{opacity:1; transform:translateY(0);}
+  100%{opacity:.15; transform:translateY(2px);}
+}
+
+/* ===== Secciones generales ===== */
+section{padding:96px 24px; max-width:1040px; margin:0 auto;}
+.eyebrow-free h2{
+  font-family:var(--serif); font-weight:300; font-size:clamp(28px,4vw,40px); color:var(--text); max-width:620px;
+}
+.lead{color:var(--text-dim); font-size:16px; line-height:1.7; max-width:640px; margin:14px auto 0;}
+
+/* ===== Centered section headers (title + lead text below it) ===== */
+.section-head{text-align:center;}
+.section-head h2, .section-head .lead{margin-left:auto; margin-right:auto;}
+
+.reveal{opacity:0; transform:translateY(22px); transition:opacity .6s ease, transform .6s ease;}
+.reveal.visible{opacity:1; transform:none;}
+
+/* ===== Features grid ===== */
+.grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:50px;}
+@media (max-width:860px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:560px){.grid{grid-template-columns:1fr;}}
+.card{
+  position:relative; overflow:hidden;
+  background:linear-gradient(180deg, var(--panel) 0%, var(--panel-alt) 180%);
+  border:1px solid var(--border); border-radius:16px; padding:26px 24px;
+  opacity:0; transform:translateY(16px);
+  transition:opacity .5s ease, transform .4s cubic-bezier(.22,1,.36,1), border-color .25s ease, box-shadow .25s ease;
+}
+.card.visible{opacity:1; transform:none;}
+.card:hover{
+  border-color:color-mix(in srgb, var(--accent) 55%, var(--border));
+  transform:translateY(-4px);
+  box-shadow:0 18px 40px -22px rgba(0,0,0,.55), 0 0 0 1px rgba(217,119,87,.06) inset;
+}
+.card::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, transparent), transparent 45%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  opacity:0; transition:opacity .25s ease; pointer-events:none;
+}
+.card:hover::before{opacity:1;}
+.card .ico{
+  width:38px; height:38px; border-radius:10px;
+  background:color-mix(in srgb, var(--accent) 14%, var(--panel-alt)); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:16px;
+  transition:transform .3s cubic-bezier(.22,1,.36,1), border-color .25s ease;
+  filter:grayscale(1) contrast(1.15) brightness(1.3);
+  box-shadow:0 0 0 1px rgba(217,119,87,.18) inset, 0 6px 16px -8px rgba(217,119,87,.4);
+}
+.card:hover .ico{transform:scale(1.08) rotate(-4deg); border-color:color-mix(in srgb, var(--accent) 45%, var(--border));}
+.card h3{font-size:15px; font-weight:600; color:var(--text); margin-bottom:8px; letter-spacing:.1px;}
+.card p{font-size:13.5px; line-height:1.6; color:var(--text-dim);}
+
+/* ===== UI showcase (screenshots, ordered by importance) ===== */
+.shots-grid{
+  margin-top:50px; display:grid; grid-template-columns:1fr 1fr; gap:18px;
+}
+.shot-primary{grid-column:1 / -1;}
+@media (max-width:700px){ .shots-grid{grid-template-columns:1fr;} }
+.shot{display:flex; flex-direction:column; gap:12px;}
+.shot-frame{
+  position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--border);
+  background:var(--bg); box-shadow:0 30px 70px -40px rgba(0,0,0,.7);
+  transition:transform .4s cubic-bezier(.22,1,.36,1), border-color .25s ease, box-shadow .25s ease;
+}
+.shot:hover .shot-frame{
+  transform:translateY(-4px);
+  border-color:color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow:0 36px 80px -36px rgba(0,0,0,.8), 0 0 0 1px rgba(217,119,87,.08) inset;
+}
+.shot-primary .shot-frame{box-shadow:0 40px 90px -36px rgba(0,0,0,.75);}
+.shot-bar{display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--border); background:var(--bg);}
+.shot-bar span{width:9px; height:9px; border-radius:50%; background:var(--border);}
+.shot-frame img{
+  width:100%; height:auto; display:block;
+}
+
+/* ===== Placeholders (reservado para Nexus / Información en otros HTML) ===== */
+.ph{
+  margin-top:44px; border:1.5px dashed var(--border); border-radius:16px; padding:46px 30px;
+  text-align:center; color:var(--text-dim);
+}
+.ph .badge{
+  display:inline-block; font-size:11.5px; letter-spacing:.3px; color:var(--accent);
+  background:rgba(217,119,87,.12); border:1px solid rgba(217,119,87,.35); border-radius:20px; padding:4px 12px; margin-bottom:16px;
+}
+.ph h3{font-family:var(--serif); font-weight:300; font-size:24px; color:var(--text); margin-bottom:10px;}
+.ph p{max-width:460px; margin:0 auto; font-size:14px; line-height:1.6;}
+
+footer{border-top:1px solid var(--border); padding:30px 24px; text-align:center; color:var(--text-dim); font-size:12.5px;}
+footer b{color:var(--text-dim); font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="ambient-glow glow-left" id="glowLeft"></div>
+<div class="ambient-glow glow-right" id="glowRight"></div>
+
+<div class="page">
+
+<!-- Top bar: same order as the app (menu · logo · name · breadcrumb) -->
+<header class="topbar">
+  <div class="tb-left">
+    <div class="tb-brand">
+      <div class="tb-logo-slot">
+        <div id="navLogoGlow" class="tb-logo-glow"></div>
+        <img id="navLogo" class="tb-logo" src="QwenIconload.png" alt="Qwen Studio">
+      </div>
+      <span class="tb-word">Qwen Studio</span>
+    </div>
+  </div>
+  <nav class="tb-nav">
+    <a href="#features">Features</a>
+    <a href="#interface">Interface</a>
+    <a href="nexus.html">Nexus</a>
+  </nav>
+</header>
+
+<!-- ===== HERO with scroll-linked logo animation ===== -->
+<section class="hero" id="hero">
+  <div class="hero-sticky">
+    <div class="hero-logo-slot">
+      <img id="heroLogo" src="QwenIconload.png" alt="Qwen Studio">
+    </div>
+    <h1 class="hero-title" id="heroTitle">Qwen Studio</h1>
+    <p class="hero-sub" id="heroSub">Built AI to be easy. Chat, code, and create —<br>all running locally, all in one window.</p>
+    <div class="hero-cta" id="heroCta">
+      <a href="#features" class="btn btn-accent">View features</a>
+      <a href="nexus.html" class="btn btn-ghost">Explore Nexus</a>
+    </div>
+    <div class="scroll-hint">
+      <span class="scroll-label">Scroll</span>
+      <span class="scroll-chevrons">
+        <svg viewBox="0 0 11 7"><path d="M1 1l4.5 4.5L10 1"/></svg>
+        <svg viewBox="0 0 11 7"><path d="M1 1l4.5 4.5L10 1"/></svg>
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== What it is ===== -->
+<section class="eyebrow-free reveal section-head" id="what-is">
+  <h2>Your AI, on your machine, on your terms.</h2>
+  <p class="lead">Qwen Studio is a desktop app that connects a local LLM (GGUF format, llama.cpp engine) to an interface built for work: writing, coding, analyzing, and keeping its own memory, with no dependence on an external server.</p>
+</section>
+
+<!-- ===== Features ===== -->
+<section id="features">
+  <div class="reveal section-head">
+    <h2 style="font-family:var(--serif);font-weight:300;font-size:clamp(28px,4vw,40px);color:var(--text)">Everything it ships with</h2>
+    <p class="lead">Nine pieces living in the same window.</p>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="ico">🖥️</div><h3>100% local</h3><p>The model runs on your own machine via llama.cpp; nothing you write leaves to an outside server.</p></div>
+    <div class="card"><div class="ico">🪄</div><h3>Live Preview</h3><p>The code it generates renders instantly in a separate panel, with its own console to see errors.</p></div>
+    <div class="card"><div class="ico">🧪</div><h3>Automatic sandbox</h3><p>Before handing you the result, it tests the generated code and can fix it on its own if something fails.</p></div>
+    <div class="card"><div class="ico">🛠️</div><h3>Tool steps</h3><p>Every action the agent takes (read, write, run) is visible as a step you can open.</p></div>
+    <div class="card"><div class="ico">🔌</div><h3>MCP connectors</h3><p>Add local MCP servers to extend what the model can do for you.</p></div>
+    <div class="card"><div class="ico">🎙️</div><h3>Voice</h3><p>Text-to-speech narration and speech recognition to talk to the app directly.</p></div>
+    <a href="nexus.html" class="card" style="display:block; cursor:pointer;"><div class="ico">🧩</div><h3>Nexus</h3><p>Publish your creations to a shared hub under an anonymous pseudonym — no account needed.</p></a>
+    <div class="card"><div class="ico">👁️</div><h3>Vision and attachments</h3><p>Drag in images or files and the model analyzes them as part of the conversation.</p></div>
+    <div class="card"><div class="ico">🧠</div><h3>Persistent memory</h3><p>Saves durable facts between chats — editable and erasable by hand whenever you want.</p></div>
+  </div>
+</section>
+
+<!-- ===== UI Showcase ===== -->
+<section id="interface">
+  <div class="reveal section-head">
+    <h2 style="font-family:var(--serif);font-weight:300;font-size:clamp(28px,4vw,40px);color:var(--text)">Here's what it looks like inside</h2>
+    <p class="lead">A clean, efficient workflow designed to keep you focused.</p>
+  </div>
+  <div class="shots-grid">
+    <figure class="shot shot-primary reveal">
+      <div class="shot-frame">
+        <div class="shot-bar"><span></span><span></span><span></span></div>
+        <img src="MainScreen.png" alt="Qwen Studio — main screen" loading="lazy">
+      </div>
+    </figure>
+    <figure class="shot reveal">
+      <div class="shot-frame">
+        <div class="shot-bar"><span></span><span></span><span></span></div>
+        <img src="ThinkingProcess.png" alt="Qwen Studio — thinking process view" loading="lazy">
+      </div>
+    </figure>
+    <figure class="shot reveal">
+      <div class="shot-frame">
+        <div class="shot-bar"><span></span><span></span><span></span></div>
+        <img src="SplashScreen.png" alt="Qwen Studio — splash screen" loading="lazy">
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="reveal section-head" id="cta-final">
+  <h2 style="font-family:var(--serif);font-weight:300;font-size:clamp(28px,4vw,40px);color:var(--text)">What are you waiting for?</h2>
+  <p class="lead">Dive into the source code, check out the roadmap, or build your own mod for Qwen Studio.</p>
+  <div class="hero-cta" style="margin-top:28px;">
+    <a href="https://github.com/BetmanyLOL/QwenStudioUNO" target="_blank" rel="noopener" class="btn btn-accent">View on GitHub</a>
+    <a href="#hero" class="btn btn-ghost">Go back</a>
+  </div>
+</section>
+
+<footer>
+  <b>Qwen Studio</b> — a local-first AI desktop app. Built with Python and llama.cpp.
+</footer>
+
+</div><!-- /.page -->
+
+<script>
+// ---- Logo animation linked to hero scroll ----
+const hero = document.getElementById('hero');
+const heroLogo = document.getElementById('heroLogo');
+const heroTitle = document.getElementById('heroTitle');
+const heroSub = document.getElementById('heroSub');
+const heroCta = document.getElementById('heroCta');
+const navLogo = document.getElementById('navLogo');
+const navLogoGlow = document.getElementById('navLogoGlow');
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+function tick(){
+  const h = hero.offsetHeight - window.innerHeight;
+  const p = h > 0 ? clamp(window.scrollY / h, 0, 1) : 0;
+
+  const rotP = clamp(p / 0.55, 0, 1);
+  const rot = rotP * 540;
+
+  const shrinkP = clamp((p - 0.55) / 0.45, 0, 1);
+  const scale = 1 - shrinkP * 0.86;
+  const navRect = navLogo.getBoundingClientRect();
+  const heroRect = heroLogo.parentElement.getBoundingClientRect();
+  const tx = (navRect.left + navRect.width/2 - (heroRect.left + heroRect.width/2)) * shrinkP;
+  const ty = (navRect.top + navRect.height/2 - (heroRect.top + heroRect.height/2)) * shrinkP;
+
+  heroLogo.style.transform = `translate(${tx}px,${ty}px) rotate(${rot}deg) scale(${scale})`;
+
+  const fadeP = clamp((p - 0.4) / 0.4, 0, 1);
+  const fade = 1 - fadeP;
+  heroTitle.style.opacity = fade;
+  heroSub.style.opacity = fade;
+  heroCta.style.opacity = fade;
+  heroTitle.style.transform = `translateY(${-fadeP*18}px)`;
+
+  const logoArrived = p >= 0.97;
+  navLogo.classList.toggle('show', logoArrived);
+  navLogoGlow.classList.toggle('hide', logoArrived);
+  heroLogo.style.visibility = p >= 0.995 ? 'hidden' : 'visible';
+}
+let raf = null;
+window.addEventListener('scroll', () => { if(!raf){ raf = requestAnimationFrame(() => { tick(); raf = null; }); } });
+window.addEventListener('resize', tick);
+tick();
+
+// ---- Ambient side glows that follow the cursor ----
+const glowLeft = document.getElementById('glowLeft');
+const glowRight = document.getElementById('glowRight');
+let gx = window.innerWidth / 2, gy = window.innerHeight / 2, gRaf = null;
+
+function renderGlow(){
+  const fx = gx / window.innerWidth;   // 0..1
+  const fy = gy / window.innerHeight;  // 0..1
+  const rangeX = 70, rangeY = 90;
+  const lx = (fx - 0.5) * rangeX;
+  const ly = (fy - 0.5) * rangeY;
+  glowLeft.style.transform  = `translate(${lx}px, calc(-50% + ${ly}px))`;
+  glowRight.style.transform = `translate(${-lx}px, calc(-50% + ${ly}px))`;
+  gRaf = null;
+}
+window.addEventListener('mousemove', (e) => {
+  gx = e.clientX; gy = e.clientY;
+  if (!gRaf) gRaf = requestAnimationFrame(renderGlow);
+});
+renderGlow();
+
+// ---- Reveal on scroll for sections / cards ----
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+const cards = document.querySelectorAll('.card');
+const cio = new IntersectionObserver((entries) => {
+  entries.forEach((e,i) => { if (e.isIntersecting){ e.target.style.transitionDelay = (i%3)*70+'ms'; e.target.classList.add('visible'); } });
+}, { threshold: 0.12 });
+cards.forEach(c => cio.observe(c));
+</script>
+</body>
+</html>
