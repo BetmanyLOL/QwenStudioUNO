@@ -13,7 +13,7 @@
 }
 :root{
   --bg:#141312; --panel:#1a1918; --panel-alt:#211f1d; --border:#2e2c29;
-  --accent:#d97757; --accent-soft:#c35f3d;
+  --accent:#d97757; --accent-soft:#c35f3d; --success:#7ec699;
   --text:#faf9f5; --text-ai:#eeece6; --text-dim:#a8a69e;
   --serif:"AnthropicSans Display","Tiempos Text",Georgia,"Times New Roman",serif;
   --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
@@ -70,7 +70,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tb-sub{font-family:var(--serif); font-weight:300; font-size:17px; color:var(--accent); white-space:nowrap;}
 .tb-back{font-size:13px; color:var(--text-dim); border:1px solid var(--border); border-radius:8px; padding:7px 14px; transition:color .15s, border-color .15s;}
 .tb-back:hover{color:var(--text); border-color:var(--accent);}
-.tb-new{font-size:13px; font-weight:600; color:#1a1a18; background:var(--accent); border-radius:8px; padding:8px 16px; display:flex; align-items:center; gap:6px; opacity:.55; cursor:not-allowed;}
+.tb-new{font-size:13px; font-weight:600; color:#1a1a18; background:var(--accent); border-radius:8px; padding:8px 16px; display:flex; align-items:center; gap:6px; cursor:pointer; border:none; transition:background .15s;}
+.tb-new:hover{background:var(--accent-soft);}
 
 /* ===== Page ===== */
 .page{position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:110px 24px 80px;}
@@ -81,10 +82,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 .ph-badge{
   display:inline-flex; align-items:center; gap:7px; font-size:11.5px; letter-spacing:.4px; text-transform:uppercase;
-  color:var(--accent); background:rgba(217,119,87,.12); border:1px solid rgba(217,119,87,.35);
+  color:var(--success); background:rgba(126,198,153,.12); border:1px solid rgba(126,198,153,.35);
   border-radius:20px; padding:5px 14px; margin-bottom:18px;
 }
-.ph-badge .dot{width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 1.6s ease-in-out infinite;}
+.ph-badge .dot{width:6px; height:6px; border-radius:50%; background:var(--success); animation:pulse 1.6s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:.4;} 50%{opacity:1;}}
 
 /* ===== Filter bar ===== */
@@ -212,15 +213,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   </div>
   <div style="display:flex; gap:10px; align-items:center;">
     <a href="index.html" class="tb-back">← Back</a>
-    <span class="tb-new">+ New Nexus</span>
+    <button class="tb-new" id="newNexoBtn">+ New Nexus</button>
   </div>
 </header>
 
 <div class="page">
   <div class="hub-head">
-    <span class="ph-badge"><span class="dot"></span> Coming soon</span>
+    <span class="ph-badge"><span class="dot"></span> Live</span>
     <h1>Nexus Hub</h1>
-    <p>A shared space for Nexus — HTML pages and presentations published anonymously by the community. This is an early preview; nothing here is live yet.</p>
+    <p>A shared space for Nexos — HTML pages and presentations published anonymously by the community, straight from Qwen Studio's Publish Nexus. Browse what others have shared, or publish your own from the app.</p>
   </div>
 
   <div class="filter-bar">
@@ -368,6 +369,9 @@ function render(){
 document.getElementById("searchInput").addEventListener("input", applyFilters);
 document.getElementById("categorySelect").addEventListener("change", applyFilters);
 document.getElementById("searchBtn").addEventListener("click", applyFilters);
+document.getElementById("newNexoBtn").addEventListener("click", () => {
+  alert("Publishing happens from the Qwen Studio app: open the Live Preview panel on the page you want to share and click \"Publish Nexus\".");
+});
 
 loadManifest();
 </script>
