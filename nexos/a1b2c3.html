@@ -1,30 +1,339 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nexo de prueba</title>
-<style>
-  :root{
-    --bg:#141312; --text:#faf9f5; --accent:#d97757;
-    color-scheme: dark;
-  }
-  @media (prefers-color-scheme: light){
-    :root:not([data-theme="dark"]){ --bg:#faf9f5; --text:#141312; }
-  }
-  body{
-    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-    background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; text-align:center;
-  }
-  .card{padding:40px;}
-  h1{font-size:28px; margin-bottom:10px;}
-  p{color:var(--accent); font-size:14px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake 3D con Sombras</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #game-container { width: 100vw; height: 100vh; display: block; }
+        #ui { 
+            position: absolute; 
+            top: 20px; 
+            left: 20px; 
+            color: #ffffff; 
+            font-size: 24px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            border: 2px solid #4CAF50;
+        }
+        #game-over h2 { margin-top: 0; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        button:hover { background: #45a049; }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h1>🎉 Este es un Nexo de prueba</h1>
-    <p>Si estás viendo esto, el hub está sirviendo Nexos correctamente.</p>
-  </div>
+
+<div id="ui">
+    Puntuación: <span id="score">0</span>
+</div>
+
+<div id="game-over">
+    <h2>¡Juego Terminado!</h2>
+    <p>Puntuación final: <span id="final-score">0</span></p>
+    <button onclick="resetGame()">Jugar de nuevo</button>
+</div>
+
+<!-- Importamos Three.js desde un CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+    // --- Configuración Global ---
+    const GRID_SIZE = 15; // Tamaño del tablero (15x15)
+    const TILE_SIZE = 1;  // Tamaño de cada celda en unidades 3D
+    const SPEED_INIT = 150; // ms por movimiento
+
+    // --- Variables de Three.js ---
+    let scene, camera, renderer;
+    let snake = []; // Array de objetos Mesh
+    let food;
+    let direction = { x: 1, z: 0 }; // Dirección actual
+    let nextDirection = { x: 1, z: 0 }; // Buffer para evitar giros de 180 grados en un frame
+    let score = 0;
+    let gameInterval;
+    let isGameRunning = true;
+
+    // Materiales y Geometrías reutilizables
+    const headMaterial = new THREE.MeshStandardMaterial({ color: 0x2ecc71, roughness: 0.5, metalness: 0.1 });
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 0.6, metalness: 0.1 });
+    const foodMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000, emissiveIntensity: 0.5, roughness: 0.2 });
+    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+    
+    const sphereGeo = new THREE.SphereGeometry(0.45, 16, 16);
+    const cubeGeo = new THREE.BoxGeometry(TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+    // --- Inicialización ---
+    function init() {
+        // 1. Escena
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+        scene.fog = new THREE.Fog(0x1a1a1a, 10, 30);
+
+        // 2. Cámara
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Posicionar cámara isométrica/arriba
+        camera.position.set(0, 15, 12);
+        camera.lookAt(0, 0, 0);
+
+        // 3. Renderizador
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // ¡Sombras activadas!
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // 4. Luces
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        // Optimización de sombras
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        // 5. Entorno (Suelo y Líneas)
+        createBoard();
+
+        // 6. Eventos
+        window.addEventListener('resize', onWindowResize);
+        document.addEventListener('keydown', onKeyDown);
+
+        // Iniciar juego
+        resetGame();
+        animate();
+    }
+
+    function createBoard() {
+        // Suelo
+        const planeGeo = new THREE.PlaneGeometry(GRID_SIZE * TILE_SIZE, GRID_SIZE * TILE_SIZE);
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const plane = new THREE.Mesh(planeGeo, planeMat);
+        plane.rotation.x = -Math.PI / 2;
+        plane.receiveShadow = true;
+        scene.add(plane);
+
+        // Rejilla (GridHelper) para referencia visual
+        const gridHelper = new THREE.GridHelper(GRID_SIZE * TILE_SIZE, GRID_SIZE, 0x444444, 0x333333);
+        scene.add(gridHelper);
+
+        // Muros visuales (opcional, solo bordes simples)
+        const wallGeo = new THREE.BoxGeometry(GRID_SIZE + 1, 0.5, 0.5);
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+        
+        const wall1 = new THREE.Mesh(wallGeo, wallMat);
+        wall1.position.set(0, -0.25, -(GRID_SIZE/2));
+        scene.add(wall1);
+
+        const wall2 = new THREE.Mesh(wallGeo, wallMat);
+        wall2.position.set(0, -0.25, (GRID_SIZE/2));
+        scene.add(wall2);
+
+        const wall3 = new THREE.Mesh(wallGeo, wallMat);
+        wall3.rotation.y = Math.PI / 2;
+        wall3.position.set(-(GRID_SIZE/2), -0.25, 0);
+        scene.add(wall3);
+
+        const wall4 = new THREE.Mesh(wallGeo, wallMat);
+        wall4.rotation.y = Math.PI / 2;
+        wall4.position.set((GRID_SIZE/2), -0.25, 0);
+        scene.add(wall4);
+    }
+
+    function createSnakeSegment(position, isHead) {
+        // Usamos esferas para un look más moderno y suave
+        const mesh = new THREE.Mesh(sphereGeo, isHead ? headMaterial : bodyMaterial);
+        mesh.position.set(position.x * TILE_SIZE, 0, position.z * TILE_SIZE);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+        return mesh;
+    }
+
+    function createFood() {
+                if (food) scene.remove(food);
+        
+        // Posición aleatoria evitando la serpiente
+        let valid = false;
+        let x, z;
+        
+        while (!valid) {
+            x = Math.floor(Math.random() * GRID_SIZE) - GRID_SIZE / 2;
+            z = Math.floor(Math.random() * GRID_SIZE) - GRID_SIZE / 2;
+            valid = true;
+            for (let seg of snake) {
+                if (Math.round(seg.position.x) === x * TILE_SIZE && Math.round(seg.position.z) === z * TILE_SIZE) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+
+        const foodGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        food = new THREE.Mesh(foodGeo, foodMaterial);
+        food.position.set(x * TILE_SIZE, 0, z * TILE_SIZE);
+        food.castShadow = true;
+        scene.add(food);
+        
+        // Luz puntual para la comida (efecto brillo)
+        const light = new THREE.PointLight(0xff0000, 0.5, 3);
+        light.position.set(0, 0.5, 0);
+        food.add(light);
+        
+        food.userData = { x, z };
+    }
+
+    function resetGame() {
+        // Limpiar serpiente vieja
+        snake.forEach(seg => scene.remove(seg));
+        snake = [];
+        score = 0;
+        document.getElementById('score').innerText = score;
+        document.getElementById('game-over').style.display = 'none';
+        isGameRunning = true;
+        direction = { x: 1, z: 0 };
+        nextDirection = { x: 1, z: 0 };
+
+        // Crear cabeza inicial
+        const startPos = { x: 0, z: 0 };
+        const head = createSnakeSegment(startPos, true);
+        snake.push(head);
+
+        createFood();
+
+        if (gameInterval) clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, SPEED_INIT);
+    }
+
+    function gameLoop() {
+        if (!isGameRunning) return;
+
+        // Actualizar dirección
+        direction = nextDirection;
+
+        // Calcular nueva cabeza
+        const headPos = { x: snake[0].position.x / TILE_SIZE, z: snake[0].position.z / TILE_SIZE };
+        const newHead = { 
+            x: headPos.x + direction.x, 
+            z: headPos.z + direction.z 
+        };
+
+        // 1. Detectar Colisión con Paredes
+        const limit = GRID_SIZE / 2;
+        if (newHead.x >= limit || newHead.x < -limit || newHead.z >= limit || newHead.z < -limit) {
+            gameOver();
+            return;
+        }
+
+        // 2. Detectar Colisión consigo misma
+        for (let i = 0; i < snake.length - 1; i++) { // -1 para no chocar con la cola actual (que se moverá)
+            if (Math.round(snake[i].position.x) === newHead.x * TILE_SIZE && 
+                Math.round(snake[i].position.z) === newHead.z * TILE_SIZE) {
+                gameOver();
+                return;
+            }
+        }
+
+        // 3. Moverserpiente
+        // Comprobar si comió
+        let ate = false;
+        if (food && Math.round(food.position.x) === newHead.x * TILE_SIZE && Math.round(food.position.z) === newHead.z * TILE_SIZE) {
+            ate = true;
+            score += 10;
+            document.getElementById('score').innerText = score;
+            createFood();
+        }
+
+        // Insertar nueva cabeza
+        const newHeadMesh = createSnakeSegment(newHead, true);
+        snake.unshift(newHeadMesh);
+
+        // Si no comió, eliminar la cola
+        if (!ate) {
+            const tail = snake.pop();
+            scene.remove(tail);
+        }
+
+        // Actualizar material de la antigua cabeza a cuerpo
+        if (snake.length > 1) {
+            snake[1].material = bodyMaterial;
+            snake[1].geometry = sphereGeo; // Asegurar forma
+        }
+    }
+
+    function gameOver() {
+        isGameRunning = false;
+        clearInterval(gameInterval);
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('game-over').style.display = 'block';
+    }
+
+    function onKeyDown(event) {
+        if (!isGameRunning) return;
+
+        switch (event.key) {
+            case 'ArrowUp':
+                if (direction.z !== 1) nextDirection = { x: 0, z: -1 };
+                break;
+            case 'ArrowDown':
+                if (direction.z !== -1) nextDirection = { x: 0, z: 1 };
+                break;
+            case 'ArrowLeft':
+                if (direction.x !== 1) nextDirection = { x: -1, z: 0 };
+                break;
+            case 'ArrowRight':
+                if (direction.x !== -1) nextDirection = { x: 1, z: 0 };
+                break;
+        }
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        // Animación simple de la comida (flotar)
+        if (food && isGameRunning) {
+            food.position.y = 0.4 + Math.sin(Date.now() * 0.005) * 0.1;
+            food.rotation.y += 0.02;
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    // Arrancar
+    init();
+</script>
 </body>
 </html>
