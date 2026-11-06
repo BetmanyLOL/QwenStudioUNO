@@ -13,6 +13,18 @@
       "status": "active",
       "warned_at": null,
       "claim_key": "9f8e7d6c5b4a"
+    },
+    {
+      "id": "a0f48cf7",
+      "pseudonym": "@DustyRaptor4919",
+      "avatar": "🦋",
+      "title": "Nexo de prueba xd",
+      "category": "codigo",
+      "created_at": "2026-11-06T20:42:46Z",
+      "size_bytes": 178,
+      "status": "active",
+      "warned_at": null,
+      "claim_key": "15c1205347fc402eb9d915cc590d63a6"
     }
   ]
 }
