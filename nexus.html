@@ -107,7 +107,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   color:#1a1a18; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;
 }
 
-/* ===== Nexos grid ===== */
+/* ===== Nexus grid ===== */
 .nexos-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
 @media (max-width:860px){.nexos-grid{grid-template-columns:repeat(2,1fr);}}
 @media (max-width:560px){.nexos-grid{grid-template-columns:1fr;}}
@@ -266,11 +266,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <div class="hub-head">
     <span class="ph-badge"><span class="dot"></span> Live</span>
     <h1>Nexus Hub</h1>
-    <p>A shared space for Nexos — HTML pages and presentations published anonymously by the community, straight from Qwen Studio's Publish Nexus. Browse what others have shared, or publish your own from the app.</p>
+    <p>A shared space for Nexus — HTML pages and presentations published anonymously by the community, straight from Qwen Studio's Publish Nexus. Browse what others have shared, or publish your own from the app.</p>
   </div>
 
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="Filter Nexos...">
+    <input type="text" id="searchInput" placeholder="Filter Nexus...">
     <select id="categorySelect">
       <option value="">All categories</option>
       <option value="presentacion">Presentations</option>
@@ -290,7 +290,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   </div>
 
   <div id="nexosGrid" class="nexos-grid">
-    <div class="empty-state">Loading Nexos…</div>
+    <div class="empty-state">Loading Nexus…</div>
   </div>
 
   <p class="hub-footer" id="hubFooter">Loading manifest…</p>
@@ -299,10 +299,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <div class="modal-overlay" id="reportOverlay">
   <div class="modal-box">
     <div class="modal-head">
-      <h3>Report this Nexo</h3>
+      <h3>Report this Nexus</h3>
       <button class="modal-close" id="reportClose" aria-label="Close">✕</button>
     </div>
-    <p class="modal-sub" id="reportSub">Tell us why this Nexo should be reviewed.</p>
+    <p class="modal-sub" id="reportSub">Tell us why this Nexus should be reviewed.</p>
     <div class="modal-field">
       <label for="reportReason">Reason</label>
       <select id="reportReason">
@@ -346,10 +346,10 @@ function escapeAttr(str){
   return String(str ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ===== Report Nexo (sent to Formspree so the owner can review and remove spam) =====
+// ===== Report Nexus (sent to Formspree so the owner can review and remove spam) =====
 // Replace with your own Formspree endpoint: https://formspree.io/forms/<your-form-id> → use its
 // "https://formspree.io/f/xxxxxxx" POST URL here.
-const FORMSPREE_REPORT_URL = "https://formspree.io/f/xdeevkqj";
+const FORMSPREE_REPORT_URL = "https://formspree.io/f/REEMPLAZAR";
 let reportTarget = null; // { id, title }
 
 function openReportModal(id, title){
@@ -440,13 +440,13 @@ function renderActiveGrid(){
   }).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (filtered.length === 0){
-    grid.innerHTML = `<div class="empty-state">No Nexos match that filter yet.</div>`;
+    grid.innerHTML = `<div class="empty-state">No Nexus match that filter yet.</div>`;
     return;
   }
 
   grid.innerHTML = filtered.map(n => `
     <div class="nexo-card" data-id="${escapeAttr(n.id)}">
-      <button class="report-btn" type="button" title="Report this Nexo" aria-label="Report this Nexo"
+      <button class="report-btn" type="button" title="Report this Nexus" aria-label="Report this Nexus"
               data-report-id="${escapeAttr(n.id)}" data-report-title="${escapeAttr(n.title)}">⚑</button>
       <div class="nexo-thumb">${n.avatar}</div>
       <div class="nexo-body">
@@ -501,7 +501,7 @@ async function loadManifest(){
     manifest = await res.json();
     const activeCount = manifest.nexos.filter(n => n.status === "active" || n.status === "at_risk").length;
     document.getElementById("hubFooter").textContent =
-      `${activeCount} / ${manifest.limit} Nexos active · warning zone starts at ${manifest.warning_threshold}.`;
+      `${activeCount} / ${manifest.limit} Nexus active · warning zone starts at ${manifest.warning_threshold}.`;
     render();
   } catch (err){
     document.getElementById("nexosGrid").innerHTML =
@@ -523,7 +523,7 @@ document.getElementById("newNexoBtn").addEventListener("click", () => {
 });
 
 // Delegated clicks on the grid: the report button opens the modal (and never bubbles into
-// opening the Nexo); anywhere else on the card opens it.
+// opening the Nexus); anywhere else on the card opens it.
 document.getElementById("nexosGrid").addEventListener("click", (e) => {
   const reportBtn = e.target.closest(".report-btn");
   if (reportBtn){
